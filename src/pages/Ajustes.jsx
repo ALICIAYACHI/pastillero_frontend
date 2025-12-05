@@ -8,6 +8,7 @@ export default function Ajustes() {
   const navigate = useNavigate();
   const { user, logout, isAuthenticated, updateUser, loading: authLoading } = useAuth();
   const [notificaciones, setNotificaciones] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Estados para edición de perfil
   const [editandoNombre, setEditandoNombre] = useState(false);
@@ -39,6 +40,17 @@ export default function Ajustes() {
       navigate("/login", { replace: true });
     }
   }, [authLoading, isAuthenticated, navigate]);
+
+  // Cerrar sidebar cuando cambia el tamaño de pantalla a desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleNotificaciones = async () => {
     const nuevo = !notificaciones;
@@ -76,6 +88,8 @@ export default function Ajustes() {
 
   const displayName = user?.name || user?.username || user?.email?.split("@")[0] || "Usuario";
   const displayEmail = user?.email || "correo@ejemplo.com";
+
+  const closeSidebar = () => setIsSidebarOpen(false);
 
   // Función para guardar el nombre editado
   const handleGuardarNombre = async () => {
@@ -192,8 +206,50 @@ export default function Ajustes() {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-emerald-50 to-teal-50 overflow-hidden">
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-emerald-700 text-white p-4 flex items-center justify-between z-30 shadow-lg">
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-2 hover:bg-emerald-600 rounded-lg transition-colors"
+          aria-label="Abrir menú"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div className="flex items-center gap-2">
+          <img src="/logito.png" alt="Logo" className="w-8 h-8 object-contain" />
+          <span className="font-bold text-lg">Dulce Dosis</span>
+        </div>
+        <div className="w-10"></div>
+      </div>
+
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={closeSidebar}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-72 bg-gradient-to-b from-emerald-700 to-emerald-900 text-white p-6 flex flex-col h-screen">
+      <aside className={`
+        fixed md:relative inset-y-0 left-0 z-50
+        w-72 bg-gradient-to-b from-emerald-700 to-emerald-900 text-white p-6 flex flex-col h-screen
+        transform transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        {/* Close button for mobile */}
+        <button
+          onClick={closeSidebar}
+          className="md:hidden absolute top-4 right-4 p-2 hover:bg-emerald-600 rounded-lg transition-colors"
+          aria-label="Cerrar menú"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         {/* Sidebar Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -211,14 +267,14 @@ export default function Ajustes() {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-2">
-          <button onClick={() => navigate("/dashboard")} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-emerald-800 transition-all">
+          <button onClick={() => { navigate("/dashboard"); closeSidebar(); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-emerald-800 transition-all">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
             <span className="font-medium">Panel Principal</span>
           </button>
 
-          <button onClick={() => navigate("/historial")} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-emerald-800 transition-all">
+          <button onClick={() => { navigate("/historial"); closeSidebar(); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-emerald-800 transition-all">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -251,29 +307,29 @@ export default function Ajustes() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-8">
+      <main className="flex-1 overflow-y-auto pt-16 md:pt-0">
+        <div className="p-4 md:p-8">
           <div className="max-w-4xl mx-auto">
             {/* Header con botón volver */}
-            <div className="mb-8">
+            <div className="mb-6 md:mb-8">
               <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-4 transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 Volver
               </button>
-              <h2 className="text-4xl font-bold text-gray-900">Ajustes</h2>
+              <h2 className="text-2xl md:text-4xl font-bold text-gray-900">Ajustes</h2>
             </div>
 
             {/* Información Personal */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Información Personal</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl shadow-lg p-4 md:p-8 mb-4 md:mb-6">
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Información Personal</h3>
+              <div className="grid grid-cols-1 gap-4 md:gap-6">
                 {/* Nombre editable */}
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-2">Nombre</label>
                   {editandoNombre ? (
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
                         value={nombreTemp}
@@ -281,25 +337,27 @@ export default function Ajustes() {
                         className="flex-1 bg-white border-2 border-blue-500 rounded-xl px-4 py-3 text-gray-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Tu nombre"
                       />
-                      <button
-                        onClick={handleGuardarNombre}
-                        disabled={guardandoNombre}
-                        className="px-4 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
-                      >
-                        {guardandoNombre ? "..." : "✓"}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditandoNombre(false);
-                          setNombreTemp("");
-                        }}
-                        className="px-4 py-3 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-xl transition-colors"
-                      >
-                        ✕
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleGuardarNombre}
+                          disabled={guardandoNombre}
+                          className="flex-1 sm:flex-none px-4 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+                        >
+                          {guardandoNombre ? "..." : "✓"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditandoNombre(false);
+                            setNombreTemp("");
+                          }}
+                          className="flex-1 sm:flex-none px-4 py-3 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-xl transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <div className="flex-1 bg-gray-50 rounded-xl px-4 py-3 text-gray-800 font-medium">
                         {displayName}
                       </div>
@@ -319,7 +377,7 @@ export default function Ajustes() {
                 {/* Correo (no editable) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-2">Correo</label>
-                  <div className="bg-gray-50 rounded-xl px-4 py-3 text-gray-800 font-medium">
+                  <div className="bg-gray-50 rounded-xl px-4 py-3 text-gray-800 font-medium break-all">
                     {displayEmail}
                   </div>
                 </div>
@@ -327,39 +385,37 @@ export default function Ajustes() {
             </div>
 
             {/* Preferencias */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Preferencias</h3>
+            <div className="bg-white rounded-2xl shadow-lg p-4 md:p-8 mb-4 md:mb-6">
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Preferencias</h3>
               <div className="space-y-4">
                 {/* Notificaciones */}
-                <div className="flex items-center justify-between py-4">
-                  <div>
-                    <p className="text-lg font-semibold text-gray-800">Notificaciones</p>
+                <div className="flex items-center justify-between py-3 md:py-4">
+                  <div className="pr-4">
+                    <p className="text-base md:text-lg font-semibold text-gray-800">Notificaciones</p>
                     <p className="text-sm text-gray-600">Recibe recordatorios para tomar tus medicamentos</p>
                   </div>
                   <button
                     onClick={toggleNotificaciones}
-                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                      notificaciones ? "bg-blue-600" : "bg-gray-300"
-                    }`}
+                    className={`relative inline-flex h-8 w-14 flex-shrink-0 items-center rounded-full transition-colors ${notificaciones ? "bg-blue-600" : "bg-gray-300"
+                      }`}
                   >
-                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                      notificaciones ? "translate-x-7" : "translate-x-1"
-                    }`} />
+                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${notificaciones ? "translate-x-7" : "translate-x-1"
+                      }`} />
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Cambiar Contraseña */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Cambiar Contraseña</h3>
-              
+            <div className="bg-white rounded-2xl shadow-lg p-4 md:p-8 mb-4 md:mb-6">
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Cambiar Contraseña</h3>
+
               {errorPassword && (
                 <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
                   {errorPassword}
                 </div>
               )}
-              
+
               {successPassword && (
                 <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm">
                   {successPassword}
@@ -374,8 +430,8 @@ export default function Ajustes() {
                   <input
                     type="password"
                     value={passwordData.currentPassword}
-                    onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-base"
                     placeholder="Ingresa tu contraseña actual"
                   />
                 </div>
@@ -388,15 +444,15 @@ export default function Ajustes() {
                     <input
                       type={mostrarPassword ? "text" : "password"}
                       value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition pr-12"
+                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition pr-12 text-base"
                       placeholder="Ingresa tu nueva contraseña"
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setMostrarPassword(!mostrarPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         {mostrarPassword ? (
@@ -416,8 +472,8 @@ export default function Ajustes() {
                   <input
                     type={mostrarPassword ? "text" : "password"}
                     value={passwordData.confirmPassword}
-                    onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition text-base"
                     placeholder="Confirma tu nueva contraseña"
                     minLength={6}
                   />

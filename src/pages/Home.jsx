@@ -14,6 +14,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notificationTimers, setNotificationTimers] = useState([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Protección de ruta - verificar autenticación
   useEffect(() => {
@@ -29,6 +30,17 @@ export default function Home() {
       loadTratamientos();
     }
   }, [isAuthenticated, authLoading]);
+
+  // Cerrar sidebar cuando cambia el tamaño de pantalla a desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const loadTratamientos = () => {
     setLoading(true);
@@ -116,6 +128,8 @@ export default function Home() {
 
   const allCompartmentsFilled = [1, 2, 3, 4].every((c) => getTratamiento(c));
 
+  const closeSidebar = () => setIsSidebarOpen(false);
+
   // Mostrar loading mientras verifica autenticación
   if (authLoading) {
     return (
@@ -135,8 +149,50 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-emerald-50 to-teal-50 overflow-hidden">
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-emerald-700 text-white p-4 flex items-center justify-between z-30 shadow-lg">
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-2 hover:bg-emerald-600 rounded-lg transition-colors"
+          aria-label="Abrir menú"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div className="flex items-center gap-2">
+          <img src="/logito.png" alt="Logo" className="w-8 h-8 object-contain" />
+          <span className="font-bold text-lg">Dulce Dosis</span>
+        </div>
+        <div className="w-10"></div>
+      </div>
+
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={closeSidebar}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-72 bg-gradient-to-b from-emerald-700 to-emerald-900 text-white p-6 flex flex-col h-screen">
+      <aside className={`
+        fixed md:relative inset-y-0 left-0 z-50
+        w-72 bg-gradient-to-b from-emerald-700 to-emerald-900 text-white p-6 flex flex-col h-screen
+        transform transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        {/* Close button for mobile */}
+        <button
+          onClick={closeSidebar}
+          className="md:hidden absolute top-4 right-4 p-2 hover:bg-emerald-600 rounded-lg transition-colors"
+          aria-label="Cerrar menú"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -157,7 +213,7 @@ export default function Home() {
         {/* Navigation */}
         <nav className="flex-1 space-y-2">
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => { navigate("/dashboard"); closeSidebar(); }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 transition-all shadow-lg"
           >
             <svg
@@ -177,7 +233,7 @@ export default function Home() {
           </button>
 
           <button
-            onClick={() => navigate("/historial")}
+            onClick={() => { navigate("/historial"); closeSidebar(); }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-emerald-800 transition-all"
           >
             <svg
@@ -197,7 +253,7 @@ export default function Home() {
           </button>
 
           <button
-            onClick={() => navigate("/ajustes")}
+            onClick={() => { navigate("/ajustes"); closeSidebar(); }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-emerald-800 transition-all"
           >
             <svg
@@ -253,14 +309,14 @@ export default function Home() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-8">
+      <main className="flex-1 overflow-y-auto pt-16 md:pt-0">
+        <div className="p-4 md:p-8">
           <div className="max-w-5xl mx-auto">
-            <div className="mb-8">
-              <h2 className="text-4xl font-bold text-gray-900 mb-2">
+            <div className="mb-6 md:mb-8">
+              <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">
                 Bienvenido, {displayName}
               </h2>
-              <p className="text-gray-600 text-lg">
+              <p className="text-gray-600 text-base md:text-lg">
                 Gestiona tus medicamentos y horarios
               </p>
             </div>
@@ -274,10 +330,10 @@ export default function Home() {
                 </div>
               </div>
             ) : tratamientos.length === 0 ? (
-              <div className="bg-white rounded-3xl shadow-lg p-12 text-center">
-                <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-8 md:p-12 text-center">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
                   <svg
-                    className="w-10 h-10 text-emerald-600"
+                    className="w-8 h-8 md:w-10 md:h-10 text-emerald-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -290,15 +346,15 @@ export default function Home() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
                   No hay medicamentos programados
                 </h3>
-                <p className="text-gray-600 mb-8">
+                <p className="text-gray-600 mb-6 md:mb-8">
                   Agrega tu primer medicamento para comenzar
                 </p>
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-3 rounded-xl shadow-lg transition-all transform hover:scale-105"
+                  className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-5 py-3 md:px-6 md:py-3 rounded-xl shadow-lg transition-all transform hover:scale-105"
                 >
                   <svg
                     className="w-5 h-5"
@@ -317,15 +373,15 @@ export default function Home() {
                 </button>
               </div>
             ) : (
-              <div className="bg-white rounded-3xl shadow-lg p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-emerald-800">
+              <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-4 md:p-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                  <h3 className="text-xl md:text-2xl font-bold text-emerald-800">
                     Compartimentos del Pastillero
                   </h3>
                   {!allCompartmentsFilled && (
                     <button
                       onClick={() => setIsModalOpen(true)}
-                      className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-4 py-2 rounded-xl shadow-lg transition-all"
+                      className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-4 py-2 rounded-xl shadow-lg transition-all w-full sm:w-auto"
                     >
                       <svg
                         className="w-5 h-5"
@@ -345,7 +401,7 @@ export default function Home() {
                   )}
                 </div>
 
-                <section className="space-y-6">
+                <section className="space-y-4 md:space-y-6">
                   {[1, 2, 3, 4].map((comp) => (
                     <CompartimentoCard
                       key={comp}

@@ -10,6 +10,7 @@ export default function Historial() {
   const [historial, setHistorial] = useState([]);
   const [tratamientos, setTratamientos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Utilidad: formatear una fecha a YYYY-MM-DD usando la hora local
   const getFechaLocalStr = (date) => {
@@ -30,6 +31,17 @@ export default function Historial() {
     }
   }, [authLoading, isAuthenticated, navigate]);
 
+  // Cerrar sidebar cuando cambia el tamaño de pantalla a desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const cargarDatos = async () => {
     setLoading(true);
     try {
@@ -37,10 +49,10 @@ export default function Historial() {
         api.get("historial/"),
         api.get("tratamientos/")
       ]);
-      
+
       console.log(" Historial recibido:", historialRes.data);
       console.log(" Tratamientos recibidos:", tratamientosRes.data);
-      
+
       setHistorial(historialRes.data);
       setTratamientos(tratamientosRes.data);
     } catch (err) {
@@ -57,17 +69,19 @@ export default function Historial() {
 
   const displayName = user?.name || user?.username || user?.email?.split('@')[0] || "Usuario";
 
+  const closeSidebar = () => setIsSidebarOpen(false);
+
   // Generar historial completo combinando tratamientos programados con registros reales
   const generarHistorialCompleto = () => {
     const historialCompleto = {};
     // Usar "hoy" sin hora (medianoche local) para comparar solo por día
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-    
+
     // 1. Primero, crear entradas para todos los tratamientos programados
     tratamientos.forEach(tratamiento => {
       if (!tratamiento.activo) return;
-      
+
       const fechaInicio = new Date(tratamiento.fecha_inicio);
       const fechaFin = tratamiento.fecha_fin ? new Date(tratamiento.fecha_fin) : new Date();
 
@@ -78,15 +92,15 @@ export default function Historial() {
       while (fechaActual <= fechaFin && fechaActual <= hoy) {
         // Usar siempre la fecha local (no UTC) para agrupar
         const fechaStr = getFechaLocalStr(fechaActual);
-        
+
         const diaSemana = fechaActual.getDay();
-        
+
         // Verificar si corresponde según repetición
         let debeTomar = false;
         if (tratamiento.repeticion === 'DIARIO') debeTomar = true;
         if (tratamiento.repeticion === 'LUNES A VIERNES' && diaSemana >= 1 && diaSemana <= 5) debeTomar = true;
         if (tratamiento.repeticion === 'FINES DE SEMANA' && (diaSemana === 0 || diaSemana === 6)) debeTomar = true;
-        
+
         if (debeTomar) {
           // Regla importante:
           // - Para días ANTERIORES a hoy, NO creamos entradas "programadas" automáticamente.
@@ -136,15 +150,15 @@ export default function Historial() {
         fechaActual.setDate(fechaActual.getDate() + 1);
       }
     });
-    
+
     // 2. Sobrescribir con los registros reales del historial
     historial.forEach(registro => {
       console.log(" Procesando registro:", registro);
-      
+
       const fecha = new Date(registro.fecha_hora_real);
       // Importante: usar la fecha local (no UTC) para evitar adelantarse de día
       const fechaStr = getFechaLocalStr(fecha);
-      
+
       if (!historialCompleto[fechaStr]) {
         // Si no existe la fecha, crear nueva entrada directamente del historial
         historialCompleto[fechaStr] = [{
@@ -153,27 +167,27 @@ export default function Historial() {
         }];
         return;
       }
-      
+
       // Buscar coincidencia por tratamiento_id
       let encontrado = false;
-      
+
       for (let i = 0; i < historialCompleto[fechaStr].length; i++) {
         const item = historialCompleto[fechaStr][i];
-        
+
         // Buscar por tratamiento_id O por nombre de pastilla en el mismo día
         const coincideTratamiento = item.tratamiento_id === registro.tratamiento_id;
         const coincideNombre = item.nombre_pastilla.toLowerCase() === registro.nombre_pastilla.toLowerCase();
-        
+
         // Verificar si es la misma hora aproximada (dentro de 30 minutos)
         const horaItem = new Date(item.fecha_hora_real);
         const horaRegistro = new Date(registro.fecha_hora_real);
         const diffMinutos = Math.abs(horaItem - horaRegistro) / 1000 / 60;
-        
+
         console.log(`   Comparando: ${item.nombre_pastilla} vs ${registro.nombre_pastilla}`);
         console.log(`   - Coincide tratamiento: ${coincideTratamiento}`);
         console.log(`   - Coincide nombre: ${coincideNombre}`);
         console.log(`   - Diff minutos: ${diffMinutos}`);
-        
+
         if ((coincideTratamiento || coincideNombre) && diffMinutos < 180) { // 3 horas de margen
           console.log("   ✅ REEMPLAZANDO con registro real");
           historialCompleto[fechaStr][i] = {
@@ -184,7 +198,7 @@ export default function Historial() {
           break;
         }
       }
-      
+
       // Si no se encontró coincidencia, agregar como nuevo registro
       if (!encontrado) {
         console.log("   ➕ Agregando como nuevo registro");
@@ -194,7 +208,7 @@ export default function Historial() {
         });
       }
     });
-    
+
     console.log("📋 Historial completo generado:", historialCompleto);
     return historialCompleto;
   };
@@ -204,7 +218,7 @@ export default function Historial() {
   // Agrupar y formatear por fecha
   const agruparPorFecha = () => {
     const grupos = {};
-    
+
     Object.keys(historialCompleto).sort().reverse().forEach(fechaStr => {
       const fecha = new Date(fechaStr + 'T12:00:00');
       const fechaFormateada = fecha.toLocaleDateString('es-PE', {
@@ -213,12 +227,12 @@ export default function Historial() {
         month: 'long',
         day: 'numeric'
       });
-      
-      grupos[fechaFormateada] = historialCompleto[fechaStr].sort((a, b) => 
+
+      grupos[fechaFormateada] = historialCompleto[fechaStr].sort((a, b) =>
         new Date(b.fecha_hora_real) - new Date(a.fecha_hora_real)
       );
     });
-    
+
     return grupos;
   };
 
@@ -226,8 +240,50 @@ export default function Historial() {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-emerald-50 to-teal-50 overflow-hidden">
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-emerald-700 text-white p-4 flex items-center justify-between z-30 shadow-lg">
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-2 hover:bg-emerald-600 rounded-lg transition-colors"
+          aria-label="Abrir menú"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div className="flex items-center gap-2">
+          <img src="/logito.png" alt="Logo" className="w-8 h-8 object-contain" />
+          <span className="font-bold text-lg">Dulce Dosis</span>
+        </div>
+        <div className="w-10"></div>
+      </div>
+
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={closeSidebar}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-72 bg-gradient-to-b from-emerald-700 to-emerald-900 text-white p-6 flex flex-col h-screen">
+      <aside className={`
+        fixed md:relative inset-y-0 left-0 z-50
+        w-72 bg-gradient-to-b from-emerald-700 to-emerald-900 text-white p-6 flex flex-col h-screen
+        transform transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        {/* Close button for mobile */}
+        <button
+          onClick={closeSidebar}
+          className="md:hidden absolute top-4 right-4 p-2 hover:bg-emerald-600 rounded-lg transition-colors"
+          aria-label="Cerrar menú"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 flex items-center justify-center">
@@ -243,8 +299,8 @@ export default function Historial() {
         </div>
 
         <nav className="flex-1 space-y-2">
-          <button 
-            onClick={() => navigate("/dashboard")}
+          <button
+            onClick={() => { navigate("/dashboard"); closeSidebar(); }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-emerald-800 transition-all"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,8 +316,8 @@ export default function Historial() {
             <span className="font-semibold">Historial</span>
           </button>
 
-          <button 
-            onClick={() => navigate("/ajustes")}
+          <button
+            onClick={() => { navigate("/ajustes"); closeSidebar(); }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-emerald-800 transition-all"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -291,14 +347,14 @@ export default function Historial() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-8">
+      <main className="flex-1 overflow-y-auto pt-16 md:pt-0">
+        <div className="p-4 md:p-8">
           <div className="max-w-5xl mx-auto">
-            <div className="mb-8">
-              <h2 className="text-4xl font-bold text-gray-900 mb-2">
+            <div className="mb-6 md:mb-8">
+              <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">
                 Historial de Medicamentos
               </h2>
-              <p className="text-gray-600 text-lg">
+              <p className="text-gray-600 text-base md:text-lg">
                 Registro de todas tus tomas de medicamentos
               </p>
             </div>
@@ -311,14 +367,14 @@ export default function Historial() {
                 </div>
               </div>
             ) : Object.keys(historialAgrupado).length === 0 ? (
-              <div className="bg-white rounded-3xl shadow-lg p-12">
+              <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-8 md:p-12">
                 <div className="max-w-md mx-auto text-center">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+                    <svg className="w-8 h-8 md:w-10 md:h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
                     Sin historial aún
                   </h3>
                   <p className="text-gray-600">
@@ -327,48 +383,47 @@ export default function Historial() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 {Object.entries(historialAgrupado).map(([fecha, items]) => (
-                  <div key={fecha} className="bg-white rounded-3xl shadow-lg p-6">
-                    <h3 className="text-xl font-bold text-emerald-700 mb-4 capitalize">
+                  <div key={fecha} className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-4 md:p-6">
+                    <h3 className="text-lg md:text-xl font-bold text-emerald-700 mb-4 capitalize">
                       {fecha}
                     </h3>
-                    
+
                     <div className="space-y-3">
                       {items.map((item) => (
-                        <div 
+                        <div
                           key={item.id}
-                          className={`flex items-center justify-between p-4 rounded-xl border-2 ${
-                            item.estado === 'TOMADA' 
-                              ? 'bg-emerald-50 border-emerald-200' 
+                          className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border-2 gap-3 ${item.estado === 'TOMADA'
+                              ? 'bg-emerald-50 border-emerald-200'
                               : item.estado === 'PENDIENTE'
-                              ? 'bg-gray-50 border-gray-200'
-                              : 'bg-red-50 border-red-200'
-                          }`}
+                                ? 'bg-gray-50 border-gray-200'
+                                : 'bg-red-50 border-red-200'
+                            }`}
                         >
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-3 md:gap-4">
                             {item.estado === 'TOMADA' ? (
-                              <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                 </svg>
                               </div>
                             ) : item.estado === 'PENDIENTE' ? (
-                              <div className="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                               </div>
                             ) : (
-                              <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="w-10 h-10 md:w-12 md:h-12 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                               </div>
                             )}
-                            
+
                             <div>
-                              <p className="font-bold text-lg text-gray-900">{item.nombre_pastilla}</p>
+                              <p className="font-bold text-base md:text-lg text-gray-900">{item.nombre_pastilla}</p>
                               <p className="text-sm text-gray-600">
                                 {new Date(item.fecha_hora_real).toLocaleTimeString('es-PE', {
                                   hour: '2-digit',
@@ -379,14 +434,13 @@ export default function Historial() {
                             </div>
                           </div>
 
-                          <div className="text-right">
-                            <span className={`inline-block px-4 py-2 rounded-lg font-semibold ${
-                              item.estado === 'TOMADA' 
-                                ? 'bg-emerald-500 text-white' 
+                          <div className="sm:text-right">
+                            <span className={`inline-block px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-semibold text-sm md:text-base ${item.estado === 'TOMADA'
+                                ? 'bg-emerald-500 text-white'
                                 : item.estado === 'PENDIENTE'
-                                ? 'bg-gray-400 text-white'
-                                : 'bg-red-500 text-white'
-                            }`}>
+                                  ? 'bg-gray-400 text-white'
+                                  : 'bg-red-500 text-white'
+                              }`}>
                               {item.estado === 'TOMADA' ? 'Tomada' : item.estado === 'PENDIENTE' ? 'Pendiente' : 'Omitida'}
                             </span>
                           </div>

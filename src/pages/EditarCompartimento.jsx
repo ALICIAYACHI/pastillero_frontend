@@ -111,7 +111,7 @@ export default function EditarCompartimento() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
       {/* Header con botón de regreso - FIJO */}
       <div className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 py-3 md:py-4 flex items-center gap-4">
           <button
             onClick={() => navigate("/dashboard")}
             className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium transition"
@@ -119,31 +119,32 @@ export default function EditarCompartimento() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Volver al Dashboard
+            <span className="hidden sm:inline">Volver al Dashboard</span>
+            <span className="sm:hidden">Volver</span>
           </button>
           <div className="flex-1" />
           <div className="flex items-center justify-center">
             <img
               src="/dashboard.png"
               alt="Logo"
-              className="w-16 h-16 object-contain drop-shadow-sm"
+              className="w-12 h-12 md:w-16 md:h-16 object-contain drop-shadow-sm"
             />
           </div>
         </div>
       </div>
 
       {/* Formulario con padding-top para compensar el header fijo */}
-      <div className="flex items-center justify-center px-4 py-8 pt-32">
+      <div className="flex items-center justify-center px-4 py-6 md:py-8 pt-20 md:pt-28">
         <form
           onSubmit={handleSubmit}
-          className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-xl space-y-6 border border-emerald-100"
+          className="bg-white p-5 md:p-8 rounded-2xl shadow-2xl w-full max-w-xl space-y-5 md:space-y-6 border border-emerald-100"
         >
           {/* Header */}
           <div className="text-center">
-            <h1 className="text-3xl font-extrabold text-emerald-700">
+            <h1 className="text-2xl md:text-3xl font-extrabold text-emerald-700">
               Compartimento {form.compartimento}
             </h1>
-            <p className="text-gray-500 mt-1">
+            <p className="text-gray-500 mt-1 text-sm md:text-base">
               Configura las pastillas, dosis y horarios
             </p>
           </div>
@@ -159,7 +160,7 @@ export default function EditarCompartimento() {
               placeholder="Ej: Paracetamol"
               value={form.nombre_pastilla}
               onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none text-base"
               required
             />
           </div>
@@ -174,7 +175,7 @@ export default function EditarCompartimento() {
               name="dosis"
               value={form.dosis}
               onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none text-base"
               min="1"
               required
             />
@@ -190,7 +191,7 @@ export default function EditarCompartimento() {
               name="stock"
               value={form.stock}
               onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none text-base"
               min="0"
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -207,7 +208,7 @@ export default function EditarCompartimento() {
               name="repeticion"
               value={form.repeticion}
               onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none bg-white"
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none bg-white text-base"
             >
               <option value="DIARIO">Diario</option>
               <option value="CADA_X_HORAS">Cada X horas</option>
@@ -227,7 +228,7 @@ export default function EditarCompartimento() {
                 placeholder="Ej: cada 8 horas"
                 value={form.intervalo_horas}
                 onChange={handleChange}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none text-base"
                 min="1"
               />
             </div>
@@ -243,13 +244,13 @@ export default function EditarCompartimento() {
                 name="hora_toma"
                 value={form.hora_toma}
                 onChange={handleChange}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none text-base"
               />
             </div>
           )}
 
           {form.repeticion === "SEMANAL" && (
-            <div className="space-y-2">
+            <div className="space-y-3 md:space-y-2">
               <label className="block font-semibold text-gray-700 mb-1">
                 Día y hora
               </label>
@@ -257,7 +258,7 @@ export default function EditarCompartimento() {
                 name="dia_semana"
                 value={form.dia_semana}
                 onChange={handleChange}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none bg-white"
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none bg-white text-base"
               >
                 <option value="">Selecciona un día</option>
                 <option value="0">Lunes</option>
@@ -273,13 +274,13 @@ export default function EditarCompartimento() {
                 name="hora_toma"
                 value={form.hora_toma}
                 onChange={handleChange}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none text-base"
               />
             </div>
           )}
 
-          {/* Fechas */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Fechas - Responsive */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
             <div>
               <label className="block font-semibold text-gray-700 mb-1">
                 Fecha inicio
@@ -289,7 +290,7 @@ export default function EditarCompartimento() {
                 name="fecha_inicio"
                 value={form.fecha_inicio}
                 onChange={handleChange}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none text-base"
               />
             </div>
             <div>
@@ -301,7 +302,7 @@ export default function EditarCompartimento() {
                 name="fecha_fin"
                 value={form.fecha_fin}
                 onChange={handleChange}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none"
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400 outline-none text-base"
               />
             </div>
           </div>
@@ -309,7 +310,7 @@ export default function EditarCompartimento() {
           {/* Submit */}
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-emerald-500 to-emerald-700 text-white py-3 rounded-lg font-bold hover:scale-105 transition-transform shadow-md"
+            className="w-full bg-gradient-to-r from-emerald-500 to-emerald-700 text-white py-3 rounded-lg font-bold hover:scale-105 transition-transform shadow-md text-base"
           >
             Guardar configuración
           </button>
