@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://pastillero.onrender.com/api/",
+  baseURL: "https://pastillero-backend-ydbs.onrender.com/api/",
   headers: {
     'Content-Type': 'application/json',
   },
